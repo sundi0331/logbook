@@ -1,0 +1,6 @@
+auth:
+  mode: out-of-cluster
+log:
+  format: json
+  out: stdout
+  level: info

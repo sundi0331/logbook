@@ -1,0 +1,39 @@
+# Default values for logbook.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+logbook:
+  # namespace to watch, defaults to all namespaces
+  namespace:
+  log:
+    # log format, default is json, available values: json, text
+    format:
+    # log output, default is stdout, available values: stdout, stderr, file
+    out:
+    # log level, default is info, available values: panic, fatal, error, warn, info, debug, trace
+    level:
+    # full path of log file with filename (valid only when log-out is set to file. default is k8s-events.log in the same directory as logbook)
+    filename:
+
+image:
+  repository: ghcr.io/sundi0331/logbook
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 200Mi
+  limits:
+    cpu: 100m
+    memory: 400Mi

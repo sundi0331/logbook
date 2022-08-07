@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    {{- include "logbook.labels" . | nindent 4 }}
+  name: {{ include "logbook.fullname" . }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "logbook.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "logbook.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: {{ .Chart.Name }}
+        env:
+          {{- if .Values.logbook.namespace }}
+          - name: LOGBOOK_TARGET_NAMESPACE
+            value: {{ .Values.logbook.namespace }}
+          {{- end }}
+          {{- if .Values.logbook.log.format }}
+          - name: LOGBOOK_LOG_FORMAT
+            value: {{ .Values.logbook.log.format }}
+          {{- end }}
+          {{- if .Values.logbook.log.out }}
+          - name: LOGBOOK_LOG_OUT
+            value: {{ .Values.logbook.log.out }}
+          {{- end }}
+          {{- if .Values.logbook.log.level }}
+          - name: LOGBOOK_LOG_LEVEL
+            value: {{ .Values.logbook.log.level }}
+          {{- end }}
+          {{- if .Values.logbook.log.filename }}
+          - name: LOGBOOK_LOG_FILENAME
+            value: {{ .Values.logbook.log.filename }}
+          {{- end }}
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+      restartPolicy: Always
+      serviceAccountName: {{ include "logbook.serviceAccountName" . }}
