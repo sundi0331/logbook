@@ -3,6 +3,7 @@ on: push
 permissions:
   id-token: write
   contents: read
+  security-events: write
 
 env:
   REGISTRY_URL: ghcr.io
