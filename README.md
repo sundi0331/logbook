@@ -1,5 +1,6 @@
 # Logbook
-Logbook is a kubernetes event logger which can be used both in-cluster(use kubernetes ServiceAccount for auth) and out-of-cluster(use kubeconfig file for auth). It logs kubernetes events to stdout or a file, which can then be processed by your logging pipeline, enabling you manage kubernetes events like other container logs.
+Logbook is a kubernetes event logger which can be used both in-cluster(use kubernetes ServiceAccount for auth) and out-of-cluster(use kubeconfig file for auth). It logs kubernetes events to stdout or a file, which can be further processed by your logging pipeline, enabling you manage kubernetes events like container logs.
+![logbook helm demo](img/helm-demo.gif)
 
 ## Installation
 ---
