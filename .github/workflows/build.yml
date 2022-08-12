@@ -24,4 +24,17 @@ jobs:
         run: docker build -t ${{ env.REGISTRY_URL }}/${{ github.repository }}:${{ env.IMAGE_TAG }} -f Dockerfile .
 
       - name: docker push (manually cause there is a bug in build-push-action)
-        run: docker push ${{ env.REGISTRY_URL }}/${{ github.repository }}:${{ env.IMAGE_TAG }} 
+        run: docker push ${{ env.REGISTRY_URL }}/${{ github.repository }}:${{ env.IMAGE_TAG }}
+        
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.REGISTRY_URL }}/${{ github.repository }}:${{ env.IMAGE_TAG }}'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
