@@ -79,14 +79,14 @@ func watchEvents(cfg *config.Config, clientset *kubernetes.Clientset) {
 				log.Warnln("Event watcher result channel closed.")
 				os.Exit(0)
 			}
-			switch event.Type {
-			case apiWatch.Modified, apiWatch.Added, apiWatch.Error:
-				marshalledEvent, err := json.Marshal(event)
-				if err != nil {
-					log.Panicln(errors.Wrap(err, "Error occured while marshalling event"))
-				}
-				log.Infof("%s\n", string(marshalledEvent))
+			// switch event.Type {
+			// case apiWatch.Modified, apiWatch.Added, apiWatch.Error:
+			marshalledEvent, err := json.Marshal(event)
+			if err != nil {
+				log.Panicln(errors.Wrap(err, "Error occured while marshalling event"))
 			}
+			log.Infof("%s\n", string(marshalledEvent))
+			// }
 		}
 	}
 }
