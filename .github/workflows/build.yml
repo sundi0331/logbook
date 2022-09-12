@@ -1,3 +1,5 @@
+name: "Build"
+
 on: push
 
 permissions:
@@ -22,7 +24,18 @@ jobs:
           password: ${{ secrets.WORKFLOW_TOKEN }}
       
       - name: docker build
-        run: docker build -t ${{ env.REGISTRY_URL }}/${{ github.repository }}:${{ env.IMAGE_TAG }} -f Dockerfile .
+        run: |
+          docker buildx build -f Dockerfile \
+            -t ${{ env.REGISTRY_URL }}/${{ github.repository }}:${{ env.IMAGE_TAG }} \
+            --label "org.opencontainers.image.created=$(date -u --iso-8601=seconds)"
+            --label "org.opencontainers.image.authors=${{ github.actor }}"
+            --label "org.opencontainers.image.url=${{ github.repositoryUrl }}"
+            --label "org.opencontainers.image.documentation=${{ github.repositoryUrl }}"
+            --label "org.opencontainers.image.source=${{ github.repositoryUrl }}"
+            --label "org.opencontainers.image.version=${{ env.IMAGE_TAG }}"
+            --label "org.opencontainers.image.revision=${{ GITHUB_SHA }}"
+            --label "org.opencontainers.image.title=${{ github.event.repository.name }}"
+            .
 
       - name: docker push (manually cause there is a bug in build-push-action)
         run: docker push ${{ env.REGISTRY_URL }}/${{ github.repository }}:${{ env.IMAGE_TAG }}
