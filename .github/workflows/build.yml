@@ -47,7 +47,7 @@ jobs:
       - name: Fetch signing key
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-        run: echo $COSIGN_PRIVATE_KEY > cosign.key
+        run: echo $COSIGN_PRIVATE_KEY | base64 -d > cosign.key
 
       - name: Sign the docker image
         env:
