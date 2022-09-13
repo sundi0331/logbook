@@ -2,7 +2,7 @@
 [![.github/workflows/build.yml](https://github.com/sundi0331/logbook/actions/workflows/build.yml/badge.svg?branch=main&event=push)](https://github.com/sundi0331/logbook/actions/workflows/build.yml)
 [![CodeQL](https://github.com/sundi0331/logbook/actions/workflows/codeql-analysis.yml/badge.svg?branch=main&event=push)](https://github.com/sundi0331/logbook/actions/workflows/codeql-analysis.yml)
 
-Logbook is a kubernetes event logger which can be used both in-cluster(use kubernetes ServiceAccount for auth) and out-of-cluster(use kubeconfig file for auth). It logs kubernetes events to stdout or a file, which can be further processed by your logging pipeline, enabling you manage kubernetes events like container logs.
+Logbook is a kubernetes event logger which can be used either in-cluster(use kubernetes ServiceAccount for auth) or out-of-cluster(use kubeconfig file for auth). It logs kubernetes events to stdout or a file, which can be further processed by your logging pipeline, enabling you manage kubernetes events like container logs.
 
 ![logbook helm demo](img/helm-demo.gif)
 
