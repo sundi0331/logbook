@@ -37,6 +37,7 @@ jobs:
             --label "org.opencontainers.image.version=${{ env.IMAGE_TAG }}" \
             --label "org.opencontainers.image.revision=${{ github.sha }}" \
             --label "org.opencontainers.image.title=${{ github.event.repository.name }}" \
+            --label "org.opencontainers.image.description=Logbook is a kubernetes event logger which can be used both in-cluster(use kubernetes ServiceAccount for auth) and out-of-cluster(use kubeconfig file for auth)." \
             .
 
       - name: Docker push
