@@ -25,14 +25,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set IMAGE_TAG for main branch
-        if: endsWith(github.ref, '/main')
+        if: github.ref_name == 'main'
         run: |
           echo "IMAGE_TAG=${{ env.VERSION }}" >> $GITHUB_ENV
 
       - name: Set IMAGE_TAG for other branches
-        if: ${{ !endsWith(github.ref, '/main') }}
+        if: !(github.ref_name == 'main')
         run: |
-          echo "IMAGE_TAG=${{ github.ref_name }}-latest" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${{ github.head_ref }}-latest" >> $GITHUB_ENV
 
       - name: Checkout
         uses: actions/checkout@v3
