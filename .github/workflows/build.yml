@@ -1,6 +1,14 @@
 name: Build
 
-on: push
+on: 
+  push:
+    branches:
+    - main
+  pull_request:
+    types:
+    - opened
+    - synchronize
+    - reopened
 
 permissions:
   id-token: write
@@ -9,12 +17,23 @@ permissions:
 
 env:
   REGISTRY_URL: ghcr.io
-  IMAGE_TAG: 0.1.0
+  VERSION: 0.1.0
+  USERNAME: sundi0331
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Set IMAGE_TAG for main branch
+        if: github.ref_name == 'main'
+        run: |
+          echo "IMAGE_TAG=${{ env.VERSION }}" >> $GITHUB_ENV
+
+      - name: Set IMAGE_TAG for other branches
+        if: github.ref_name != 'main'
+        run: |
+          echo "IMAGE_TAG=${{ github.head_ref }}-latest" >> $GITHUB_ENV
+
       - name: Checkout
         uses: actions/checkout@v3
 
@@ -22,7 +41,7 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY_URL }}
-          username: ${{ github.actor }}
+          username: ${{ env.USERNAME }}
           password: ${{ secrets.WORKFLOW_TOKEN }}
       
       - name: Docker build
@@ -30,7 +49,7 @@ jobs:
           docker buildx build -f Dockerfile \
             -t ${{ env.REGISTRY_URL }}/${{ github.repository }}:${{ env.IMAGE_TAG }} \
             --label "org.opencontainers.image.created=$(date -u --iso-8601=seconds)" \
-            --label "org.opencontainers.image.authors=${{ github.actor }}" \
+            --label "org.opencontainers.image.authors=${{ env.USERNAME }}" \
             --label "org.opencontainers.image.url=${{ github.repositoryUrl }}" \
             --label "org.opencontainers.image.documentation=${{ github.repositoryUrl }}" \
             --label "org.opencontainers.image.source=${{ github.repositoryUrl }}" \
@@ -45,21 +64,6 @@ jobs:
 
       - name: Install cosign
         uses: sigstore/cosign-installer@main
-        with:
-          cosign-release: 'v1.11.0'
-
-      # - name: Fetch signing key
-      #   env:
-      #     COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-      #   run: echo $COSIGN_PRIVATE_KEY | base64 -d > cosign.key
-
-      # - name: Sign the docker image
-      #   env:
-      #     COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-      #   run: cosign sign --key cosign.key ${{ env.REGISTRY_URL }}/${{ github.repository }}:${{ env.IMAGE_TAG }}
-
-      # - name: Remove signing key
-      #   run: rm cosign.key
 
       - name: Sign the images with GitHub OIDC Token
         env:
