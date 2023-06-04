@@ -14,6 +14,7 @@ permissions:
   id-token: write
   contents: read
   security-events: write
+  packages: write
 
 env:
   REGISTRY_URL: ghcr.io
