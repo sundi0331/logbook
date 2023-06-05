@@ -43,7 +43,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY_URL }}
           username: ${{ env.USERNAME }}
-          password: ${{ secrets.WORKFLOW_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Docker build
         run: |
