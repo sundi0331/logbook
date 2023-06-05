@@ -4,6 +4,8 @@ on:
   push:
     branches:
     - main
+    tags:
+    - '*'
   pull_request:
     types:
     - opened
@@ -85,6 +87,7 @@ jobs:
           sarif_file: 'trivy-results.sarif'
   
   release:
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
