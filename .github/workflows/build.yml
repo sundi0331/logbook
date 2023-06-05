@@ -24,8 +24,6 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
     steps:
       - name: Set IMAGE_TAG for main branch
         if: github.ref_name == 'main'
@@ -45,7 +43,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY_URL }}
           username: ${{ env.USERNAME }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.WORKFLOW_TOKEN }}
       
       - name: Docker build
         run: |
