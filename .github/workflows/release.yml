@@ -8,71 +8,10 @@ on:
         required: true
 
 permissions:
-  id-token: write
   contents: write
-  security-events: write
-  packages: write
-
-env:
-  REGISTRY_URL: ghcr.io
-  VERSION: latest
-  USERNAME: sundi0331
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Docker login
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY_URL }}
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.WORKFLOW_TOKEN }}
-      
-      - name: Docker build
-        run: |
-          docker buildx build -f Dockerfile \
-            -t ${{ env.REGISTRY_URL }}/${{ github.repository }}:${{ github.event.inputs.version }} \
-            --label "org.opencontainers.image.created=$(date -u --iso-8601=seconds)" \
-            --label "org.opencontainers.image.authors=${{ env.USERNAME }}" \
-            --label "org.opencontainers.image.url=${{ github.repositoryUrl }}" \
-            --label "org.opencontainers.image.documentation=${{ github.repositoryUrl }}" \
-            --label "org.opencontainers.image.source=${{ github.repositoryUrl }}" \
-            --label "org.opencontainers.image.version=${{ github.event.inputs.version }}" \
-            --label "org.opencontainers.image.revision=${{ github.sha }}" \
-            --label "org.opencontainers.image.title=${{ github.event.repository.name }}" \
-            --label "org.opencontainers.image.description=Logbook is a kubernetes event logger which can be used either in-cluster(use kubernetes ServiceAccount for auth) or out-of-cluster(use kubeconfig file for auth)." \
-            .
-
-      - name: Docker push
-        run: docker push ${{ env.REGISTRY_URL }}/${{ github.repository }}:${{ github.event.inputs.version }}
-
-      - name: Install cosign
-        uses: sigstore/cosign-installer@main
-
-      - name: Sign the images with GitHub OIDC Token
-        env:
-          COSIGN_EXPERIMENTAL: true
-        run: cosign sign -y ${{ env.REGISTRY_URL }}/${{ github.repository }}:${{ github.event.inputs.version }}
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: '${{ env.REGISTRY_URL }}/${{ github.repository }}:${{ github.event.inputs.version }}'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
-  
   release:
-    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -83,20 +22,16 @@ jobs:
       
       - name: Build Linux amd64
         run: |
-          GOOS=linux GOARCH=amd64 go build -o "logbook_${{ github.event.inputs.version }}_linux_x86_64"
+          GOOS=linux GOARCH=amd64 go build -o logbook_${{ github.event.inputs.version }}_linux_x86_64
 
       - name: Build Linux amd64
         run: |
-          GOOS=windows GOARCH=amd64 go build -o "logbook_${{ github.event.inputs.version }}_windows_x86_64.exe"
+          GOOS=windows GOARCH=amd64 go build -o logbook_${{ github.event.inputs.version }}_windows_x86_64.exe
       
-      - name: Debug
-        run: |
-          ls -lah
-
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.event.inputs.version }}
           files: |
-            "logbook_${{ github.event.inputs.version }}_linux_x86_64"
-            "logbook_${{ github.event.inputs.version }}_windows_x86_64.exe"
+            logbook_${{ github.event.inputs.version }}_linux_x86_64
+            logbook_${{ github.event.inputs.version }}_windows_x86_64.exe
