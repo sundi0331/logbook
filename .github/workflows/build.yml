@@ -20,7 +20,7 @@ permissions:
 
 env:
   REGISTRY_URL: ghcr.io
-  VERSION: 0.1.1
+  VERSION: latest
   USERNAME: sundi0331
 
 jobs:
@@ -105,6 +105,10 @@ jobs:
         run: |
           GOOS=windows GOARCH=amd64 go build -o "logbook_${{  github.ref_name }}_windows_x86_64.exe"
       
+      - name: Debug
+        run: |
+          ls -lah
+
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
