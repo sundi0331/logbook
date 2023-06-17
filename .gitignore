@@ -1,5 +1,6 @@
 # Binaries for programs and plugins
 logbook
+*_x86_64
 *.exe
 *.exe~
 *.dll
