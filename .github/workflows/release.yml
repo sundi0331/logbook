@@ -96,6 +96,7 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ github.event.inputs.version }}
           files: |
             "logbook_${{ github.event.inputs.version }}_linux_x86_64"
             "logbook_${{ github.event.inputs.version }}_windows_x86_64.exe"
