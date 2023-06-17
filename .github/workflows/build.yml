@@ -20,7 +20,7 @@ permissions:
 
 env:
   REGISTRY_URL: ghcr.io
-  VERSION: 0.1.0
+  VERSION: 0.1.1
   USERNAME: sundi0331
 
 jobs:
@@ -88,6 +88,7 @@ jobs:
   
   release:
     needs: build
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -98,16 +99,15 @@ jobs:
       
       - name: Build Linux amd64
         run: |
-          GOOS=linux GOARCH=amd64 go build -o logbook
+          GOOS=linux GOARCH=amd64 go build -o "logbook_${{  github.ref_name }}_linux_x86_64"
 
       - name: Build Linux amd64
         run: |
-          GOOS=windows GOARCH=amd64 go build -o logbook.exe
+          GOOS=windows GOARCH=amd64 go build -o "logbook_${{  github.ref_name }}_windows_x86_64.exe"
       
       - name: Release
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            logbook
-            logbook.exe
+            "logbook_${{  github.ref_name }}_linux_x86_64"
+            "logbook_${{  github.ref_name }}_windows_x86_64.exe"
