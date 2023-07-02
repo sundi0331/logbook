@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.19 as build
+FROM golang:1.20 as build
 
 COPY ./ /go/src/logbook
 WORKDIR /go/src/logbook
