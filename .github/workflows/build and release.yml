@@ -40,12 +40,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      # - name: Docker login
-      #   uses: docker/login-action@v2
-      #   with:
-      #     registry: ${{ env.REGISTRY_URL }}
-      #     username: ${{ github.repository_owner }}
-      #     password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Docker login
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY_URL }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Docker build
         run: |
