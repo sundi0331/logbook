@@ -19,3 +19,19 @@ updates:
       - ${{ github.repository_owner }}
     labels:
       - "go dependencies"
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    reviewers:
+      - ${{ github.repository_owner }}
+    labels:
+      - "dockerfile"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    reviewers:
+      - ${{ github.repository_owner }}
+    labels:
+      - "github actions"
