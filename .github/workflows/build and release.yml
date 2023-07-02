@@ -40,23 +40,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      # - name: Docker login
-      #   uses: docker/login-action@v2
-      #   with:
-      #     registry: ${{ env.REGISTRY_URL }}
-      #     username: ${{ github.repository_owner }}
-      #     password: ${{ secrets.WORKFLOW_TOKEN }}
-
       - name: Docker login
-        run: |
-          docker login ghcr.io -u ${{ github.repository_owner }} -p ${{ secrets.WORKFLOW_TOKEN }}
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY_URL }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Docker build
         run: |
           docker buildx build -f Dockerfile \
             -t ${{ env.REGISTRY_URL }}/${{ github.repository }}:${{ env.IMAGE_TAG }} \
             --label "org.opencontainers.image.created=$(date -u --iso-8601=seconds)" \
-            --label "org.opencontainers.image.authors=${{ env.USERNAME }}" \
+            --label "org.opencontainers.image.authors=${{ github.repository_owner }}" \
             --label "org.opencontainers.image.url=${{ github.repositoryUrl }}" \
             --label "org.opencontainers.image.documentation=${{ github.repositoryUrl }}" \
             --label "org.opencontainers.image.source=${{ github.repositoryUrl }}" \

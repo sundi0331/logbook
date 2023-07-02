@@ -4,8 +4,34 @@
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 
 version: 2
+# registries:
+#   ghcr:
+#     type: docker-registry
+#     url: ghcr.io
+#     username: ${{ github.repository_owner }}
+#     password: ${{ secrets.WORKFLOW_TOKEN }}
 updates:
   - package-ecosystem: "gomod" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+    reviewers:
+      - ${{ github.repository_owner }}
+    labels:
+      - "go dependencies"
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    reviewers:
+      - ${{ github.repository_owner }}
+    labels:
+      - "dockerfile"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    reviewers:
+      - ${{ github.repository_owner }}
+    labels:
+      - "github actions"
