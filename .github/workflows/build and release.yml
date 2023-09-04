@@ -101,7 +101,7 @@ jobs:
         run: |
           GOOS=linux GOARCH=amd64 go build -o logbook_${{  github.ref_name }}_linux_x86_64
 
-      - name: Build Linux amd64
+      - name: Build Windows amd64
         run: |
           GOOS=windows GOARCH=amd64 go build -o logbook_${{  github.ref_name }}_windows_x86_64.exe
       
