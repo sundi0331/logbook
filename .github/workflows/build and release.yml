@@ -106,7 +106,7 @@ jobs:
           GOOS=windows GOARCH=amd64 go build -o logbook_${{  github.ref_name }}_windows_x86_64.exe
       
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             logbook_${{  github.ref_name }}_linux_x86_64
