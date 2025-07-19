@@ -19,6 +19,11 @@ updates:
       - ${{ github.repository_owner }}
     labels:
       - "go dependencies"
+    cooldown:
+      default-days: 14
+      semver-major-days: 30
+      semver-minor-days: 14
+      semver-patch-days: 3
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
@@ -27,6 +32,11 @@ updates:
       - ${{ github.repository_owner }}
     labels:
       - "dockerfile"
+    cooldown:
+      default-days: 14
+      semver-major-days: 30
+      semver-minor-days: 14
+      semver-patch-days: 3
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
@@ -35,3 +45,8 @@ updates:
       - ${{ github.repository_owner }}
     labels:
       - "github actions"
+    cooldown:
+      default-days: 14
+      semver-major-days: 30
+      semver-minor-days: 14
+      semver-patch-days: 3
