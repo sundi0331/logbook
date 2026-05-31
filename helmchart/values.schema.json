@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "replicaCount": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "logbook": {
+      "type": "object",
+      "properties": {
+        "namespace": { "type": "string" },
+        "log": {
+          "type": "object",
+          "properties": {
+            "format": { "type": "string", "enum": ["json", "text"] },
+            "out": { "type": "string", "enum": ["stdout", "stderr", "file"] },
+            "level": { "type": "string", "enum": ["debug", "info", "warn", "error"] },
+            "filename": { "type": "string" }
+          }
+        }
+      }
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "repository": { "type": "string" },
+        "pullPolicy": { "type": "string", "enum": ["Always", "IfNotPresent", "Never"] },
+        "tag": { "type": "string" }
+      }
+    },
+    "serviceAccount": {
+      "type": "object",
+      "properties": {
+        "create": { "type": "boolean" },
+        "annotations": { "type": "object" },
+        "name": { "type": "string" },
+        "automountServiceAccountToken": { "type": "boolean" }
+      }
+    }
+  }
+}

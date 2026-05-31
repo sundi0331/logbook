@@ -1,8 +1,9 @@
 # Logbook
-[![.github/workflows/build%20and%20release.yml](https://github.com/sundi0331/logbook/actions/workflows/build%20and%20release.yml/badge.svg?branch=main&event=push)](https://github.com/sundi0331/logbook/actions/workflows/build%20and%20release.yml)
+[![Build](https://github.com/sundi0331/logbook/actions/workflows/build%20and%20release.yml/badge.svg?branch=main&event=push)](https://github.com/sundi0331/logbook/actions/workflows/build%20and%20release.yml)
 [![CodeQL](https://github.com/sundi0331/logbook/actions/workflows/codeql-analysis.yml/badge.svg?branch=main&event=push)](https://github.com/sundi0331/logbook/actions/workflows/codeql-analysis.yml)
+[![Container](https://github.com/sundi0331/logbook/actions/workflows/container.yml/badge.svg?branch=main&event=push)](https://github.com/sundi0331/logbook/actions/workflows/container.yml)
 
-Logbook is a kubernetes event logger which can be used either in-cluster(use kubernetes ServiceAccount for auth) or out-of-cluster(use kubeconfig file for auth). It logs kubernetes events to stdout or a file, which can be further processed by your logging pipeline, enabling you manage kubernetes events like container logs.
+Logbook is a Kubernetes event logger which can be used either in-cluster(use kubernetes ServiceAccount for auth) or out-of-cluster(use kubeconfig file for auth). It logs kubernetes events to stdout or a file, which can be further processed by your logging pipeline, enabling you manage kubernetes events like container logs.
 
 ![logbook helm demo](img/helm-demo.gif)
 
@@ -30,4 +31,15 @@ helm install RELEASE_NAME ./helmchart --namespace=INSTALL_NAMESPACE
 |  namespace  |  LOGBOOK_TARGET_NAMESPACE  |  Namespace to watch (default is all namespaces)  |
 |  log-format  |  LOGBOOK_LOG_FORMAT  |  Log format (default is json)<br>Valid values: json, text  |
 |  log-out  |  LOGBOOK_LOG_OUT  |  Log output (default is stdout)<br>Valid values: stdout, stderr, file  |
+|  log-level  |  LOGBOOK_LOG_LEVEL  |  Log level (default is info)<br>Valid values: debug, info, warn, error  |
 |  log-filename  |  LOGBOOK_LOG_FILENAME  |  Full path of log file with filename (valid only when log-out is set to file. Default is k8s-events.log in the same directory as logbook)  |
+
+
+## Development
+
+```sh
+make verify
+make build
+```
+
+Logbook watches Kubernetes Events through the stable `events.k8s.io/v1` API.

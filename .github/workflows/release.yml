@@ -1,37 +1,63 @@
 name: Release
 
-on: 
+on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release Version'
+        description: Release version, for example v1.2.3
         required: true
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
       - name: Setup Go
         uses: actions/setup-go@v6
-      
-      - name: Build Linux amd64
-        run: |
-          GOOS=linux GOARCH=amd64 go build -o logbook_${{ github.event.inputs.version }}_linux_x86_64
+        with:
+          go-version-file: go.mod
+          cache: true
 
-      - name: Build Linux amd64
+      - name: Set release metadata
+        id: metadata
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
         run: |
-          GOOS=windows GOARCH=amd64 go build -o logbook_${{ github.event.inputs.version }}_windows_x86_64.exe
-      
+          if [ -n "${INPUT_VERSION}" ]; then
+            echo "version=${INPUT_VERSION}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+          echo "commit=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Build release binaries
+        env:
+          VERSION: ${{ steps.metadata.outputs.version }}
+          COMMIT: ${{ steps.metadata.outputs.commit }}
+          DATE: ${{ steps.metadata.outputs.date }}
+        run: |
+          LDFLAGS="-s -w -X github.com/sundi0331/logbook/cmd.version=${VERSION} -X github.com/sundi0331/logbook/cmd.commit=${COMMIT} -X github.com/sundi0331/logbook/cmd.date=${DATE}"
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "${LDFLAGS}" -o logbook_${VERSION}_linux_amd64 .
+          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -ldflags "${LDFLAGS}" -o logbook_${VERSION}_linux_arm64 .
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "${LDFLAGS}" -o logbook_${VERSION}_windows_amd64.exe .
+          sha256sum logbook_${VERSION}_* > checksums.txt
+
       - name: Release
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.event.inputs.version }}
+          tag_name: ${{ steps.metadata.outputs.version }}
           files: |
-            logbook_${{ github.event.inputs.version }}_linux_x86_64
-            logbook_${{ github.event.inputs.version }}_windows_x86_64.exe
+            logbook_${{ steps.metadata.outputs.version }}_linux_amd64
+            logbook_${{ steps.metadata.outputs.version }}_linux_arm64
+            logbook_${{ steps.metadata.outputs.version }}_windows_amd64.exe
+            checksums.txt

@@ -6,7 +6,7 @@ metadata:
   name: {{ include "logbook.fullname" . }}
 rules:
 - apiGroups:
-  - ""
+  - events.k8s.io
   resources:
   - events
   verbs:
