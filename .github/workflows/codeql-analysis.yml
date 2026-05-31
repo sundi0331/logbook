@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+      - dev
   pull_request:
     branches:
       - main
+      - dev
   schedule:
     - cron: '29 20 * * 0'
 
@@ -23,6 +25,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
