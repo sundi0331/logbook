@@ -1,10 +1,15 @@
-/*
-Copyright © 2022 sundi0331@gmail.com
-*/
 package main
 
-import "github.com/sundi0331/logbook/cmd"
+import (
+	"fmt"
+	"os"
+
+	"github.com/sundi0331/logbook/cmd"
+)
 
 func main() {
-	cmd.Execute()
+	if err := cmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }

@@ -1,34 +1,49 @@
 # Default values for logbook.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+
+replicaCount: 1
 
 logbook:
-  # namespace to watch, defaults to all namespaces
-  namespace:
+  # Namespace to watch; an empty value watches all namespaces.
+  namespace: ""
   log:
-    # log format, default is json, available values: json, text
-    format:
-    # log output, default is stdout, available values: stdout, stderr, file
-    out:
-    # log level, default is info, available values: panic, fatal, error, warn, info, debug, trace
-    level:
-    # full path of log file with filename (valid only when log-out is set to file. default is k8s-events.log in the same directory as logbook)
-    filename:
+    # Log format. Valid values: json, text.
+    format: json
+    # Log output. Valid values: stdout, stderr, file.
+    out: stdout
+    # Log level. Valid values: debug, info, warn, error.
+    level: info
+    # Full path of log file with filename. Only used when log.out is file.
+    filename: k8s-events.log
 
 image:
   repository: ghcr.io/sundi0331/logbook
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
 
 serviceAccount:
-  # Specifies whether a service account should be created
   create: true
-  # Annotations to add to the service account
   annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
   name: ""
+  automountServiceAccountToken: true
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
 
 resources:
   requests:
@@ -37,3 +52,7 @@ resources:
   limits:
     cpu: 100m
     memory: 400Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
