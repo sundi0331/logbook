@@ -7,19 +7,80 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Release version, for example v1.2.3
+        description: Existing release tag to publish, for example v1.2.3
         required: true
 
 permissions: {}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}-${{ github.event.inputs.version || '' }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
   release:
+    name: Publish release
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: write
+      id-token: write
+      security-events: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release metadata
+        id: metadata
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          set -euo pipefail
+
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            VERSION="${INPUT_VERSION}"
+          else
+            VERSION="${GITHUB_REF_NAME}"
+          fi
+
+          if ! [[ "${VERSION}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
+            echo "release version must match vMAJOR.MINOR.PATCH or vMAJOR.MINOR.PATCH-prerelease: ${VERSION}" >&2
+            exit 1
+          fi
+
+          git fetch --tags --force
+          if ! git rev-parse -q --verify "refs/tags/${VERSION}^{commit}" >/dev/null; then
+            echo "release tag does not exist: ${VERSION}" >&2
+            exit 1
+          fi
+          git checkout --detach "refs/tags/${VERSION}"
+
+          COMMIT="$(git rev-parse HEAD)"
+          SOURCE_DATE_EPOCH="$(git show -s --format=%ct "${COMMIT}")"
+          DATE="$(date -u -d "@${SOURCE_DATE_EPOCH}" +%Y-%m-%dT%H:%M:%SZ)"
+          IMAGE_VERSION="${VERSION#v}"
+          CORE_VERSION="${IMAGE_VERSION%%-*}"
+          IFS=. read -r MAJOR MINOR PATCH <<EOF
+          ${CORE_VERSION}
+          EOF
+
+          STABLE=true
+          if [[ "${IMAGE_VERSION}" == *-* ]]; then
+            STABLE=false
+          fi
+
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "image_version=${IMAGE_VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "major=${MAJOR}" >> "${GITHUB_OUTPUT}"
+          echo "major_minor=${MAJOR}.${MINOR}" >> "${GITHUB_OUTPUT}"
+          echo "stable=${STABLE}" >> "${GITHUB_OUTPUT}"
+          echo "commit=${COMMIT}" >> "${GITHUB_OUTPUT}"
+          echo "date=${DATE}" >> "${GITHUB_OUTPUT}"
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -27,37 +88,143 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Set release metadata
-        id: metadata
-        env:
-          INPUT_VERSION: ${{ github.event.inputs.version }}
+      - name: Verify Go packages
         run: |
-          if [ -n "${INPUT_VERSION}" ]; then
-            echo "version=${INPUT_VERSION}" >> "$GITHUB_OUTPUT"
-          else
-            echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-          fi
-          echo "commit=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
-          echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+          go test ./...
+          go vet ./...
 
-      - name: Build release binaries
+      - name: Build release archives
         env:
           VERSION: ${{ steps.metadata.outputs.version }}
           COMMIT: ${{ steps.metadata.outputs.commit }}
           DATE: ${{ steps.metadata.outputs.date }}
         run: |
+          set -euo pipefail
+
           LDFLAGS="-s -w -X github.com/sundi0331/logbook/cmd.version=${VERSION} -X github.com/sundi0331/logbook/cmd.commit=${COMMIT} -X github.com/sundi0331/logbook/cmd.date=${DATE}"
-          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "${LDFLAGS}" -o logbook_${VERSION}_linux_amd64 .
-          GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -ldflags "${LDFLAGS}" -o logbook_${VERSION}_linux_arm64 .
-          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -ldflags "${LDFLAGS}" -o logbook_${VERSION}_windows_amd64.exe .
-          sha256sum logbook_${VERSION}_* > checksums.txt
+          mkdir -p dist build
+
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; do
+            os="${target%/*}"
+            arch="${target#*/}"
+            name="logbook_${VERSION}_${os}_${arch}"
+            package_dir="build/${name}"
+            binary="logbook"
+            if [ "${os}" = "windows" ]; then
+              binary="logbook.exe"
+            fi
+
+            mkdir -p "${package_dir}"
+            GOOS="${os}" GOARCH="${arch}" CGO_ENABLED=0 go build -trimpath -ldflags "${LDFLAGS}" -o "${package_dir}/${binary}" .
+            cp LICENSE "${package_dir}/LICENSE"
+
+            if [ "${os}" = "windows" ]; then
+              (cd build && zip -qr "../dist/${name}.zip" "${name}")
+            else
+              tar -C build -czf "dist/${name}.tar.gz" "${name}"
+            fi
+          done
+
+          ./build/logbook_${VERSION}_linux_amd64/logbook version
+          (cd dist && sha256sum *.tar.gz *.zip > SHA256SUMS)
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata
+        id: image-meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ steps.metadata.outputs.version }}
+            type=raw,value=${{ steps.metadata.outputs.image_version }}
+            type=raw,value=${{ steps.metadata.outputs.major_minor }},enable=${{ steps.metadata.outputs.stable == 'true' }}
+            type=raw,value=${{ steps.metadata.outputs.major }},enable=${{ steps.metadata.outputs.stable == 'true' }}
+            type=raw,value=latest,enable=${{ steps.metadata.outputs.stable == 'true' }}
+
+      - name: Build and push release image
+        id: build-image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.image-meta.outputs.tags }}
+          labels: ${{ steps.image-meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.metadata.outputs.version }}
+            COMMIT=${{ steps.metadata.outputs.commit }}
+            DATE=${{ steps.metadata.outputs.date }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: mode=max
+          sbom: true
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-image.outputs.digest }}
+          format: sarif
+          output: trivy-results.sarif
+
+      - name: Upload Trivy scan results
+        if: hashFiles('trivy-results.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-results.sarif
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v4
+
+      - name: Sign release image
+        env:
+          DIGEST: ${{ steps.build-image.outputs.digest }}
+          TAGS: ${{ steps.image-meta.outputs.tags }}
+        run: |
+          set -euo pipefail
+          while IFS= read -r tag; do
+            cosign sign --yes "${tag}@${DIGEST}"
+          done <<< "${TAGS}"
+
+      - name: Write release notes
+        env:
+          VERSION: ${{ steps.metadata.outputs.version }}
+          IMAGE_VERSION: ${{ steps.metadata.outputs.image_version }}
+          IMAGE_DIGEST: ${{ steps.build-image.outputs.digest }}
+        run: |
+          set -euo pipefail
+          IMAGE="${REGISTRY}/${IMAGE_NAME}"
+          cat > dist/release-notes.md <<EOF
+          ## Installation
+
+          Download a platform archive from the assets below, or pull the container image:
+
+              docker pull ${IMAGE}:${VERSION}
+              docker pull ${IMAGE}:${IMAGE_VERSION}
+
+          Immutable image digest:
+
+              ${IMAGE}@${IMAGE_DIGEST}
+
+          Verify downloaded archives with SHA256SUMS.
+          EOF
 
       - name: Release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.metadata.outputs.version }}
+          target_commitish: ${{ steps.metadata.outputs.commit }}
+          prerelease: ${{ steps.metadata.outputs.stable != 'true' }}
+          body_path: dist/release-notes.md
+          fail_on_unmatched_files: true
           files: |
-            logbook_${{ steps.metadata.outputs.version }}_linux_amd64
-            logbook_${{ steps.metadata.outputs.version }}_linux_arm64
-            logbook_${{ steps.metadata.outputs.version }}_windows_amd64.exe
-            checksums.txt
+            dist/*.tar.gz
+            dist/*.zip
+            dist/SHA256SUMS

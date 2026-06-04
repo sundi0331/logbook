@@ -10,11 +10,19 @@ Logbook is a Kubernetes event logger which can be used either in-cluster(use kub
 ## Installation
 ---
 ### Binary
-Download a binary from [**Releases page**](https://github.com/sundi0331/logbook/releases)
+Download a binary archive from [**Releases page**](https://github.com/sundi0331/logbook/releases) and verify it with the release `SHA256SUMS` file.
 ```sh
 # By default, it will use $HOME/.kube/config to authenticate, you can specify a kubeconfig file using --kubeconfig flag
 ./logbook --mode=out-of-cluster
 ```
+
+### Container
+Release images are published to GitHub Container Registry.
+```sh
+docker pull ghcr.io/sundi0331/logbook:v1.2.3
+docker pull ghcr.io/sundi0331/logbook:1.2.3
+```
+
 ### Helm
 ```sh
 git clone https://github.com/sundi0331/logbook.git
@@ -43,3 +51,14 @@ make build
 ```
 
 Logbook watches Kubernetes Events through the stable `events.k8s.io/v1` API.
+
+## Release Procedure
+
+Releases are tag driven. Create and push a semantic version tag from the commit that should be released:
+
+```sh
+git tag -a v1.2.3 -m "v1.2.3"
+git push origin v1.2.3
+```
+
+The Release workflow validates the `vMAJOR.MINOR.PATCH` tag, builds packaged binaries for Linux, macOS, and Windows, publishes a GitHub Release with `SHA256SUMS`, publishes GHCR release images, scans the image with Trivy, and signs the published image tags with cosign. Manual workflow dispatch is for rerunning an existing tag release; it does not create new tags.
