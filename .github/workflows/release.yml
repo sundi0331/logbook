@@ -13,7 +13,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref_name }}-${{ inputs.version || '' }}
+  group: ${{ github.workflow }}-${{ github.ref_name }}-${{ github.event.inputs.version || '' }}
   cancel-in-progress: false
 
 env:
@@ -34,12 +34,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-
-      - name: Setup Go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          cache: true
 
       - name: Resolve release metadata
         id: metadata
@@ -87,6 +81,17 @@ jobs:
           echo "stable=${STABLE}" >> "${GITHUB_OUTPUT}"
           echo "commit=${COMMIT}" >> "${GITHUB_OUTPUT}"
           echo "date=${DATE}" >> "${GITHUB_OUTPUT}"
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Verify Go packages
+        run: |
+          go test ./...
+          go vet ./...
 
       - name: Build release archives
         env:
@@ -144,7 +149,6 @@ jobs:
             type=raw,value=${{ steps.metadata.outputs.major_minor }},enable=${{ steps.metadata.outputs.stable == 'true' }}
             type=raw,value=${{ steps.metadata.outputs.major }},enable=${{ steps.metadata.outputs.stable == 'true' }}
             type=raw,value=latest,enable=${{ steps.metadata.outputs.stable == 'true' }}
-            type=sha,prefix=sha-
 
       - name: Build and push release image
         id: build-image
