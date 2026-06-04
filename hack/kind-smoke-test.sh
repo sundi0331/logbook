@@ -58,7 +58,7 @@ kubectl create configmap logbook-smoke-subject --namespace "${NAMESPACE}" --dry-
 
 for attempt in $(seq 1 30); do
   event_name="logbook-smoke-${attempt}"
-  event_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  event_time="$(date -u +%Y-%m-%dT%H:%M:%S.000000Z)"
 
   cat <<EOF | kubectl apply -f -
 apiVersion: events.k8s.io/v1
