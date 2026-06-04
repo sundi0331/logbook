@@ -32,10 +32,14 @@ func TestNewSupportsConfiguredLevels(t *testing.T) {
 	}
 }
 
-func TestNewRejectsUnsupportedLevel(t *testing.T) {
-	_, _, err := New(config.LogConfig{Format: "json", Out: "stdout", Level: "trace"})
-	if err == nil {
-		t.Fatal("New() error = nil, want unsupported level error")
+func TestNewRejectsUnsupportedLevels(t *testing.T) {
+	for _, level := range []string{"trace", "warning"} {
+		t.Run(level, func(t *testing.T) {
+			_, _, err := New(config.LogConfig{Format: "json", Out: "stdout", Level: level})
+			if err == nil {
+				t.Fatal("New() error = nil, want unsupported level error")
+			}
+		})
 	}
 }
 
