@@ -5,7 +5,7 @@ COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 DATE ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 LDFLAGS := -s -w -X github.com/sundi0331/logbook/cmd.version=$(VERSION) -X github.com/sundi0331/logbook/cmd.commit=$(COMMIT) -X github.com/sundi0331/logbook/cmd.date=$(DATE)
 
-.PHONY: all fmt vet test tidy build build-linux-amd64 build-win-amd64 helm-lint helm-template docker-build verify clean
+.PHONY: all fmt vet test tidy build build-linux-amd64 build-win-amd64 helm-lint helm-template docker-build smoke-kind verify clean
 
 all: verify build
 
@@ -44,6 +44,9 @@ docker-build:
 		--build-arg COMMIT=$(COMMIT) \
 		--build-arg DATE=$(DATE) \
 		-t logbook:$(VERSION) .
+
+smoke-kind:
+	CREATE_CLUSTER=true bash hack/kind-smoke-test.sh
 
 verify: fmt vet test helm-lint helm-template
 
