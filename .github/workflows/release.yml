@@ -206,18 +206,14 @@ jobs:
 
           Download a platform archive from the assets below, or pull the container image:
 
-          ```sh
-          docker pull ${IMAGE}:${VERSION}
-          docker pull ${IMAGE}:${IMAGE_VERSION}
-          ```
+              docker pull ${IMAGE}:${VERSION}
+              docker pull ${IMAGE}:${IMAGE_VERSION}
 
           Immutable image digest:
 
-          ```text
-          ${IMAGE}@${IMAGE_DIGEST}
-          ```
+              ${IMAGE}@${IMAGE_DIGEST}
 
-          Verify downloaded archives with `SHA256SUMS`.
+          Verify downloaded archives with SHA256SUMS.
           EOF
 
       - name: Release
