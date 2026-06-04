@@ -54,3 +54,26 @@ jobs:
 
       - name: Render Helm chart
         run: helm template logbook ./helmchart
+
+  smoke:
+    name: Smoke test in kind
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Setup kind
+        uses: helm/kind-action@v1.14.0
+        with:
+          cluster_name: logbook-smoke
+          wait: 120s
+
+      - name: Run kind smoke test
+        run: bash hack/kind-smoke-test.sh
