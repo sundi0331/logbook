@@ -5,8 +5,6 @@ on:
     branches:
       - main
       - dev
-    tags:
-      - 'v*'
   pull_request:
     branches:
       - main
@@ -100,9 +98,9 @@ jobs:
         with:
           sarif_file: trivy-results.sarif
 
-  publish:
-    name: Publish image
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+  publish-main:
+    name: Publish main snapshot image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -130,7 +128,6 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
-            type=ref,event=tag
             type=sha,prefix=sha-
 
       - name: Build and push image
@@ -153,7 +150,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}@${{ steps.build.outputs.digest }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
           format: sarif
           output: trivy-results.sarif
 
@@ -171,6 +168,7 @@ jobs:
           DIGEST: ${{ steps.build.outputs.digest }}
           TAGS: ${{ steps.meta.outputs.tags }}
         run: |
+          set -euo pipefail
           while IFS= read -r tag; do
             cosign sign --yes "${tag}@${DIGEST}"
           done <<< "${TAGS}"
