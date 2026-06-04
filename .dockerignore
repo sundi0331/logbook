@@ -1,0 +1,15 @@
+.git
+.cache
+.github
+.gitignore
+Dockerfile
+README.md
+LICENSE
+img
+helmchart
+*.log
+coverage.out
+dist
+bin
+logbook
+logbook.exe
