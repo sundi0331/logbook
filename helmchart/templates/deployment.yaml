@@ -1,3 +1,6 @@
+{{- if and .Values.logbook.checkpoint.enabled (eq .Values.logbook.checkpoint.backend "file") (gt (int .Values.replicaCount) 1) -}}
+{{- fail "logbook.checkpoint.backend=file uses a per-pod emptyDir checkpoint and requires replicaCount=1; use backend=configmap for multiple replicas" -}}
+{{- end -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -50,10 +53,64 @@ spec:
             - name: LOGBOOK_LOG_FILENAME
               value: {{ .Values.logbook.log.filename | quote }}
             {{- end }}
+            - name: LOGBOOK_CHECKPOINT_ENABLED
+              value: {{ .Values.logbook.checkpoint.enabled | quote }}
+            {{- if .Values.logbook.checkpoint.backend }}
+            - name: LOGBOOK_CHECKPOINT_BACKEND
+              value: {{ .Values.logbook.checkpoint.backend | quote }}
+            {{- end }}
+            - name: LOGBOOK_CHECKPOINT_NAMESPACE
+              value: {{ include "logbook.checkpointNamespace" . | quote }}
+            - name: LOGBOOK_CHECKPOINT_NAME
+              value: {{ include "logbook.checkpointName" . | quote }}
+            {{- if .Values.logbook.checkpoint.path }}
+            - name: LOGBOOK_CHECKPOINT_PATH
+              value: {{ .Values.logbook.checkpoint.path | quote }}
+            {{- end }}
+            {{- if .Values.logbook.checkpoint.flushInterval }}
+            - name: LOGBOOK_CHECKPOINT_FLUSH_INTERVAL
+              value: {{ .Values.logbook.checkpoint.flushInterval | quote }}
+            {{- end }}
+            {{- if .Values.logbook.checkpoint.onExpiredResourceVersion }}
+            - name: LOGBOOK_CHECKPOINT_ON_EXPIRED_RESOURCE_VERSION
+              value: {{ .Values.logbook.checkpoint.onExpiredResourceVersion | quote }}
+            {{- end }}
+            - name: LOGBOOK_LEADER_ELECTION_ENABLED
+              value: {{ .Values.logbook.leaderElection.enabled | quote }}
+            - name: LOGBOOK_LEADER_ELECTION_NAMESPACE
+              value: {{ include "logbook.leaderElectionNamespace" . | quote }}
+            - name: LOGBOOK_LEADER_ELECTION_NAME
+              value: {{ include "logbook.leaderElectionName" . | quote }}
+            - name: LOGBOOK_LEADER_ELECTION_IDENTITY
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            {{- if .Values.logbook.leaderElection.leaseDuration }}
+            - name: LOGBOOK_LEADER_ELECTION_LEASE_DURATION
+              value: {{ .Values.logbook.leaderElection.leaseDuration | quote }}
+            {{- end }}
+            {{- if .Values.logbook.leaderElection.renewDeadline }}
+            - name: LOGBOOK_LEADER_ELECTION_RENEW_DEADLINE
+              value: {{ .Values.logbook.leaderElection.renewDeadline | quote }}
+            {{- end }}
+            {{- if .Values.logbook.leaderElection.retryPeriod }}
+            - name: LOGBOOK_LEADER_ELECTION_RETRY_PERIOD
+              value: {{ .Values.logbook.leaderElection.retryPeriod | quote }}
+            {{- end }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- if and .Values.logbook.checkpoint.enabled (eq .Values.logbook.checkpoint.backend "file") }}
+          volumeMounts:
+            - name: logbook-checkpoint
+              mountPath: /var/lib/logbook
+          {{- end }}
+      {{- if and .Values.logbook.checkpoint.enabled (eq .Values.logbook.checkpoint.backend "file") }}
+      volumes:
+        - name: logbook-checkpoint
+          emptyDir: {}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

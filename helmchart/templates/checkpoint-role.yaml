@@ -1,0 +1,25 @@
+{{- if and .Values.logbook.checkpoint.enabled (eq .Values.logbook.checkpoint.backend "configmap") -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    {{- include "logbook.labels" . | nindent 4 }}
+  name: {{ include "logbook.checkpointRbacName" . }}
+  namespace: {{ include "logbook.checkpointNamespace" . | quote }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  resourceNames:
+  - {{ include "logbook.checkpointName" . | quote }}
+  verbs:
+  - get
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+{{- end }}
