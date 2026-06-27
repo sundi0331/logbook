@@ -60,3 +60,45 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Create the checkpoint ConfigMap name.
+*/}}
+{{- define "logbook.checkpointName" -}}
+{{- default "logbook-checkpoint" .Values.logbook.checkpoint.name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Create the checkpoint ConfigMap namespace.
+*/}}
+{{- define "logbook.checkpointNamespace" -}}
+{{- default .Release.Namespace .Values.logbook.checkpoint.namespace }}
+{{- end }}
+
+{{/*
+Create the checkpoint RBAC resource name.
+*/}}
+{{- define "logbook.checkpointRbacName" -}}
+{{- printf "%s-checkpoint" (include "logbook.fullname" . | trunc 52 | trimSuffix "-") | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Create the leader election Lease name.
+*/}}
+{{- define "logbook.leaderElectionName" -}}
+{{- default "logbook-leader" .Values.logbook.leaderElection.name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Create the leader election Lease namespace.
+*/}}
+{{- define "logbook.leaderElectionNamespace" -}}
+{{- default .Release.Namespace .Values.logbook.leaderElection.namespace }}
+{{- end }}
+
+{{/*
+Create the leader election RBAC resource name.
+*/}}
+{{- define "logbook.leaderElectionRbacName" -}}
+{{- printf "%s-leader-election" (include "logbook.fullname" . | trunc 47 | trimSuffix "-") | trunc 63 | trimSuffix "-" }}
+{{- end }}

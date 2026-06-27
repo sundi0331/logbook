@@ -4,3 +4,14 @@ log:
   format: json
   out: stdout
   level: info
+checkpoint:
+  enabled: true
+  backend: configmap
+  flush_interval: 5s
+  on_expired_resource_version: skip-existing
+leader_election:
+  enabled: false
+  name: logbook-leader
+  lease_duration: 15s
+  renew_deadline: 10s
+  retry_period: 2s

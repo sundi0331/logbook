@@ -14,6 +14,34 @@ logbook:
     level: info
     # Full path of log file with filename. Only used when log.out is file.
     filename: k8s-events.log
+  checkpoint:
+    # Persist the last processed Kubernetes Event resourceVersion.
+    enabled: true
+    # Checkpoint backend. Valid values: configmap, file.
+    backend: configmap
+    # Namespace for the checkpoint ConfigMap. Defaults to the Helm release namespace.
+    namespace: ""
+    # Name of the checkpoint ConfigMap.
+    name: logbook-checkpoint
+    # File path when checkpoint.backend is file. The chart mounts a writable emptyDir at /var/lib/logbook for this backend.
+    path: /var/lib/logbook/checkpoint
+    # Coalesce checkpoint writes and flush the latest resourceVersion at this interval.
+    # Set to 0s to flush every observed event.
+    flushInterval: 5s
+    # Behavior when Kubernetes has compacted the saved resourceVersion.
+    # Valid values: skip-existing, fail.
+    onExpiredResourceVersion: skip-existing
+  leaderElection:
+    # Ensure only one Logbook replica streams events and writes checkpoints.
+    enabled: true
+    # Namespace for the leader election Lease. Defaults to the Helm release namespace.
+    namespace: ""
+    # Name of the leader election Lease.
+    name: logbook-leader
+    # Lease timing. Increase these values in clusters with high API latency.
+    leaseDuration: 15s
+    renewDeadline: 10s
+    retryPeriod: 2s
 
 image:
   repository: ghcr.io/sundi0331/logbook
