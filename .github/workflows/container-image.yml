@@ -145,7 +145,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: mode=max
-          sbom: true
+          sbom: false
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@v0.36.0
@@ -162,6 +162,35 @@ jobs:
 
       - name: Install cosign
         uses: sigstore/cosign-installer@v4.1.2
+
+      - name: Install Syft
+        id: syft
+        uses: anchore/sbom-action/download-syft@v0
+
+      - name: Generate image SBOM
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          "${{ steps.syft.outputs.cmd }}" "${REGISTRY}/${IMAGE_NAME}@${DIGEST}" -o spdx-json=sbom.spdx.json
+
+      - name: Attest image SBOM
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          cosign attest --yes --predicate sbom.spdx.json --type spdxjson "${REGISTRY}/${IMAGE_NAME}@${DIGEST}"
+
+      - name: Verify image SBOM attestation
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          cosign verify-attestation \
+            --type spdxjson \
+            --certificate-identity-regexp "https://github.com/${GITHUB_REPOSITORY}/.github/workflows/.*" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            "${REGISTRY}/${IMAGE_NAME}@${DIGEST}"
 
       - name: Sign image
         env:
