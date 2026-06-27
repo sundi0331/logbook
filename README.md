@@ -1,7 +1,7 @@
 # Logbook
-[![Build](https://github.com/sundi0331/logbook/actions/workflows/build%20and%20release.yml/badge.svg?branch=dev&event=push)](https://github.com/sundi0331/logbook/actions/workflows/build%20and%20release.yml)
-[![CodeQL](https://github.com/sundi0331/logbook/actions/workflows/codeql-analysis.yml/badge.svg?branch=dev&event=push)](https://github.com/sundi0331/logbook/actions/workflows/codeql-analysis.yml)
-[![Container](https://github.com/sundi0331/logbook/actions/workflows/container.yml/badge.svg?branch=dev&event=push)](https://github.com/sundi0331/logbook/actions/workflows/container.yml)
+[![CI](https://github.com/sundi0331/logbook/actions/workflows/ci.yml/badge.svg?branch=dev&event=push)](https://github.com/sundi0331/logbook/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/sundi0331/logbook/actions/workflows/codeql.yml/badge.svg?branch=dev&event=push)](https://github.com/sundi0331/logbook/actions/workflows/codeql.yml)
+[![Container Image](https://github.com/sundi0331/logbook/actions/workflows/container-image.yml/badge.svg?branch=dev&event=push)](https://github.com/sundi0331/logbook/actions/workflows/container-image.yml)
 
 Logbook is a Kubernetes event logger which can be used either in-cluster(use kubernetes ServiceAccount for auth) or out-of-cluster(use kubeconfig file for auth). It logs kubernetes events to stdout or a file, which can be further processed by your logging pipeline, enabling you manage kubernetes events like container logs.
 
