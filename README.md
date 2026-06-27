@@ -61,4 +61,4 @@ git tag -a v1.2.3 -m "v1.2.3"
 git push origin v1.2.3
 ```
 
-The Release workflow validates the `vMAJOR.MINOR.PATCH` tag, builds packaged binaries for Linux, macOS, and Windows, publishes a GitHub Release with `SHA256SUMS`, publishes GHCR release images, scans the image with Trivy, and signs the published image tags with cosign. Manual workflow dispatch is for rerunning an existing tag release; it does not create new tags.
+The Release workflow validates the `vMAJOR.MINOR.PATCH` tag, builds packaged binaries for Linux, macOS, and Windows, publishes a GitHub Release with `SHA256SUMS`, publishes GHCR release images, scans the image with Trivy, signs the published image tags with cosign, and attaches a cosign-verifiable SPDX SBOM attestation. Manual workflow dispatch is for rerunning an existing tag release; it does not create new tags.
