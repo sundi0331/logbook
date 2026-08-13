@@ -94,7 +94,7 @@ jobs:
 
       - name: Upload Trivy scan results
         if: hashFiles('trivy-results.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v4.37.4
+        uses: github/codeql-action/upload-sarif@v4.37.6
         with:
           sarif_file: trivy-results.sarif
 
@@ -156,7 +156,7 @@ jobs:
 
       - name: Upload Trivy scan results
         if: hashFiles('trivy-results.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v4.37.4
+        uses: github/codeql-action/upload-sarif@v4.37.6
         with:
           sarif_file: trivy-results.sarif
 
