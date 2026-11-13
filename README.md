@@ -86,3 +86,31 @@ git push origin v1.2.3
 ```
 
 The Release workflow validates the `vMAJOR.MINOR.PATCH` tag, builds packaged binaries for Linux, macOS, and Windows, publishes a GitHub Release with `SHA256SUMS`, publishes GHCR release images, scans the image with Trivy, signs the published image tags with cosign, and attaches a cosign-verifiable SPDX SBOM attestation. Manual workflow dispatch is for rerunning an existing tag release; it does not create new tags.
+
+### Container image metadata
+
+Main snapshots and release images publish the following metadata to GHCR alongside the immutable image digest:
+
+- Syft generates an SPDX JSON SBOM; cosign publishes it as a signed `spdxjson` attestation.
+- Grype scans that SBOM and publishes its JSON report as a signed attestation with the custom predicate type `https://anchore.com/grype/scan/v1`. Findings include CVE identifiers where available and scanner/database metadata. Findings do not block publication; scanner or attestation errors fail the workflow.
+- BuildKit generates SLSA Provenance v1 (`https://slsa.dev/provenance/v1`) using `provenance: mode=max,version=v1` and stores it in the pushed image index. This is build provenance, not a claim of a particular SLSA assurance level.
+
+The existing Trivy checks remain enabled. PR and dev builds do not publish images or registry metadata. Vulnerability reports describe the database at scan time; they are not continuously refreshed.
+
+To retrieve and verify signed metadata, replace the digest below with the published digest. For releases, use the exact workflow identity `https://github.com/sundi0331/logbook/.github/workflows/release.yml@refs/tags/vX.Y.Z` (or the dispatch ref for a manual run).
+
+```sh
+IMAGE='ghcr.io/sundi0331/logbook@sha256:REPLACE_WITH_DIGEST'
+IDENTITY='https://github.com/sundi0331/logbook/.github/workflows/container-image.yml@refs/heads/main'
+cosign verify-attestation --type spdxjson \
+  --certificate-identity "$IDENTITY" \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com "$IMAGE"
+cosign verify-attestation --type https://anchore.com/grype/scan/v1 \
+  --certificate-identity "$IDENTITY" \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com "$IMAGE"
+docker buildx imagetools inspect "$IMAGE" --format '{{json .Provenance.SLSA}}'
+```
+
+Cosign returns signed envelopes; their base64 `payload` contains the in-toto statement and report under `predicate`. The Buildx command retrieves provenance; it does not verify a cosign signature. See [Docker attestations](https://docs.docker.com/build/ci/github-actions/attestations/) and [cosign verification](https://docs.sigstore.dev/cosign/verifying/attestation/) for details.
+
+Validate the metadata workflow contract locally with `python3 hack/test-image-metadata.py`.
