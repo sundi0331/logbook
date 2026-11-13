@@ -6,6 +6,19 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ImageMetadataTests(unittest.TestCase):
+    def test_git_context_tracks_selected_source(self):
+        container = (ROOT / ".github/workflows/container-image.yml").read_text()
+        release = (ROOT / ".github/workflows/release.yml").read_text()
+        self.assertNotIn("context:", container)
+        self.assertNotIn("context: .", release)
+        build = release.split("id: build-image\n")[1].split("\n      - name:")[0]
+        self.assertIn(
+            "context: https://github.com/${{ github.repository }}.git#${{ steps.metadata.outputs.commit }}",
+            build,
+        )
+        self.assertLess(release.index('git checkout --detach "refs/tags/${VERSION}"'),
+                        release.index('COMMIT="$(git rev-parse HEAD)"'))
+
     def test_published_images_have_all_metadata(self):
         for filename, build in [("container-image.yml", "build"), ("release.yml", "build-image")]:
             with self.subTest(workflow=filename):

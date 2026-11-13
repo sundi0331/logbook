@@ -89,6 +89,8 @@ The Release workflow validates the `vMAJOR.MINOR.PATCH` tag, builds packaged bin
 
 ### Container image metadata
 
+Container builds use the triggering event’s Git context. Release image builds use an explicit Git context pinned to the resolved release commit, including manual runs; local generated files are excluded from the image build.
+
 Main snapshots and release images publish the following metadata to GHCR alongside the immutable image digest:
 
 - Syft generates an SPDX JSON SBOM; cosign publishes it as a signed `spdxjson` attestation.

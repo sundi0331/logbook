@@ -154,7 +154,8 @@ jobs:
         id: build-image
         uses: docker/build-push-action@v7
         with:
-          context: .
+          # Pin Git context to the selected tag, including manual release runs.
+          context: https://github.com/${{ github.repository }}.git#${{ steps.metadata.outputs.commit }}
           push: true
           tags: ${{ steps.image-meta.outputs.tags }}
           labels: ${{ steps.image-meta.outputs.labels }}
