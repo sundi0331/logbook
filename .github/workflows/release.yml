@@ -164,7 +164,8 @@ jobs:
             DATE=${{ steps.metadata.outputs.date }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          provenance: mode=max
+          # BuildKit publishes SLSA Provenance v1 with the image index in GHCR.
+          provenance: mode=max,version=v1
           sbom: false
 
       - name: Run Trivy vulnerability scanner
@@ -201,6 +202,22 @@ jobs:
           set -euo pipefail
           cosign attest --yes --predicate sbom.spdx.json --type spdxjson "${REGISTRY}/${IMAGE_NAME}@${DIGEST}"
 
+      - name: Generate image vulnerability report with Grype
+        uses: anchore/scan-action@v7
+        with:
+          sbom: sbom.spdx.json
+          output-format: json
+          output-file: grype.json
+          fail-build: false
+          by-cve: true
+
+      - name: Attest image vulnerabilities
+        env:
+          DIGEST: ${{ steps.build-image.outputs.digest }}
+        run: |
+          set -euo pipefail
+          cosign attest --yes --predicate grype.json --type https://anchore.com/grype/scan/v1 "${REGISTRY}/${IMAGE_NAME}@${DIGEST}"
+
       - name: Sign release image
         env:
           DIGEST: ${{ steps.build-image.outputs.digest }}
@@ -231,7 +248,7 @@ jobs:
 
               ${IMAGE}@${IMAGE_DIGEST}
 
-          Verify downloaded archives with SHA256SUMS. The release image also includes a cosign-verifiable SPDX SBOM attestation.
+          Verify downloaded archives with SHA256SUMS. The release image includes signed Syft SPDX SBOM and Grype vulnerability attestations, plus BuildKit SLSA Provenance v1 in GHCR.
           EOF
 
       - name: Release

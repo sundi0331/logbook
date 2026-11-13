@@ -144,7 +144,8 @@ jobs:
             DATE=${{ github.event.head_commit.timestamp }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          provenance: mode=max
+          # BuildKit publishes SLSA Provenance v1 with the image index in GHCR.
+          provenance: mode=max,version=v1
           sbom: false
 
       - name: Run Trivy vulnerability scanner
@@ -180,6 +181,22 @@ jobs:
         run: |
           set -euo pipefail
           cosign attest --yes --predicate sbom.spdx.json --type spdxjson "${REGISTRY}/${IMAGE_NAME}@${DIGEST}"
+
+      - name: Generate image vulnerability report with Grype
+        uses: anchore/scan-action@v7
+        with:
+          sbom: sbom.spdx.json
+          output-format: json
+          output-file: grype.json
+          fail-build: false
+          by-cve: true
+
+      - name: Attest image vulnerabilities
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          cosign attest --yes --predicate grype.json --type https://anchore.com/grype/scan/v1 "${REGISTRY}/${IMAGE_NAME}@${DIGEST}"
 
       - name: Sign image
         env:
