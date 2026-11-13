@@ -85,7 +85,7 @@ git tag -a v1.2.3 -m "v1.2.3"
 git push origin v1.2.3
 ```
 
-The Release workflow validates the `vMAJOR.MINOR.PATCH` tag, builds packaged binaries for Linux, macOS, and Windows, publishes a GitHub Release with `SHA256SUMS`, publishes GHCR release images, scans the image with Trivy, signs the published image tags with cosign, and attaches a cosign-verifiable SPDX SBOM attestation. Manual workflow dispatch is for rerunning an existing tag release; it does not create new tags.
+The Release workflow validates the `vMAJOR.MINOR.PATCH` tag, builds packaged binaries for Linux, macOS, and Windows, publishes a GitHub Release with `SHA256SUMS`, publishes GHCR release images, scans the image with Trivy, signs the published image digest once with cosign, and attaches a cosign-verifiable SPDX SBOM attestation. Manual workflow dispatch is for rerunning an existing tag release; it does not create new tags.
 
 ### Container image metadata
 
@@ -97,6 +97,8 @@ Main snapshots and release images publish the following metadata to GHCR alongsi
 - Grype scans that SBOM and publishes its JSON report as a signed attestation with the custom predicate type `https://anchore.com/grype/scan/v1`. Findings include CVE identifiers where available and scanner/database metadata. Findings do not block publication; scanner or attestation errors fail the workflow.
 - `actions/attest@v4` generates Sigstore-signed SLSA Provenance v1 for the published image digest and uploads it to GitHub attestations and GHCR. Signing permissions are scoped to publishing jobs.
 - BuildKit generates SLSA Provenance v1 (`https://slsa.dev/provenance/v1`) using `provenance: mode=max,version=v1` and stores it in the pushed image index. This is build provenance, not a claim of a particular SLSA assurance level.
+
+Each publishing job signs the image digest once, covering every tag pointing to that digest. After all attestations and the image signature are pushed, a final `cosign verify` step retrieves and verifies the image signature against the exact invoking workflow identity and GitHub OIDC issuer. Verification failure fails the job; it does not roll back the published image. This step verifies the image signature, while the commands below verify attestations separately.
 
 The existing Trivy checks remain enabled. PR and dev builds do not publish images or registry metadata. Vulnerability reports describe the database at scan time; they are not continuously refreshed.
 
