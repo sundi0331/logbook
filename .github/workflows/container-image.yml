@@ -37,7 +37,6 @@ jobs:
       - name: Build image
         uses: docker/build-push-action@v7
         with:
-          context: .
           push: false
           tags: logbook:scan
           load: true
@@ -72,7 +71,6 @@ jobs:
       - name: Build image
         uses: docker/build-push-action@v7
         with:
-          context: .
           push: false
           tags: logbook:scan
           load: true
@@ -106,6 +104,8 @@ jobs:
       contents: read
       packages: write
       id-token: write
+      attestations: write
+      artifact-metadata: write
       security-events: write
     steps:
       - name: Checkout
@@ -134,7 +134,6 @@ jobs:
         id: build
         uses: docker/build-push-action@v7
         with:
-          context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -147,6 +146,13 @@ jobs:
           # BuildKit publishes SLSA Provenance v1 with the image index in GHCR.
           provenance: mode=max,version=v1
           sbom: false
+
+      - name: Attest signed image provenance
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@v0.36.0
@@ -201,9 +207,16 @@ jobs:
       - name: Sign image
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
-          TAGS: ${{ steps.meta.outputs.tags }}
         run: |
           set -euo pipefail
-          while IFS= read -r tag; do
-            cosign sign --yes "${tag}@${DIGEST}"
-          done <<< "${TAGS}"
+          cosign sign --yes "${REGISTRY}/${IMAGE_NAME}@${DIGEST}"
+
+      - name: Verify image signature
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          cosign verify \
+            --certificate-identity "${GITHUB_SERVER_URL}/${GITHUB_WORKFLOW_REF}" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            "${REGISTRY}/${IMAGE_NAME}@${DIGEST}"
