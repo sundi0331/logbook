@@ -95,6 +95,7 @@ Main snapshots and release images publish the following metadata to GHCR alongsi
 
 - Syft generates an SPDX JSON SBOM; cosign publishes it as a signed `spdxjson` attestation.
 - Grype scans that SBOM and publishes its JSON report as a signed attestation with the custom predicate type `https://anchore.com/grype/scan/v1`. Findings include CVE identifiers where available and scanner/database metadata. Findings do not block publication; scanner or attestation errors fail the workflow.
+- `actions/attest@v4` generates Sigstore-signed SLSA Provenance v1 for the published image digest and uploads it to GitHub attestations and GHCR. Signing permissions are scoped to publishing jobs.
 - BuildKit generates SLSA Provenance v1 (`https://slsa.dev/provenance/v1`) using `provenance: mode=max,version=v1` and stores it in the pushed image index. This is build provenance, not a claim of a particular SLSA assurance level.
 
 The existing Trivy checks remain enabled. PR and dev builds do not publish images or registry metadata. Vulnerability reports describe the database at scan time; they are not continuously refreshed.
@@ -110,9 +111,13 @@ cosign verify-attestation --type spdxjson \
 cosign verify-attestation --type https://anchore.com/grype/scan/v1 \
   --certificate-identity "$IDENTITY" \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com "$IMAGE"
+gh attestation verify "oci://$IMAGE" --repo sundi0331/logbook \
+  --predicate-type https://slsa.dev/provenance/v1
 docker buildx imagetools inspect "$IMAGE" --format '{{json .Provenance.SLSA}}'
 ```
 
 Cosign returns signed envelopes; their base64 `payload` contains the in-toto statement and report under `predicate`. The Buildx command retrieves provenance; it does not verify a cosign signature. See [Docker attestations](https://docs.docker.com/build/ci/github-actions/attestations/) and [cosign verification](https://docs.sigstore.dev/cosign/verifying/attestation/) for details.
+
+The signed GitHub attestation records the workflow invocation. For manual release runs, its workflow source ref can differ from the selected release tag; the BuildKit provenance records the explicitly selected image source commit.
 
 Validate the metadata workflow contract locally with `python3 hack/test-image-metadata.py`.

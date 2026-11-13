@@ -28,6 +28,8 @@ jobs:
       contents: write
       packages: write
       id-token: write
+      attestations: write
+      artifact-metadata: write
       security-events: write
     steps:
       - name: Checkout
@@ -169,6 +171,13 @@ jobs:
           provenance: mode=max,version=v1
           sbom: false
 
+      - name: Attest signed image provenance
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.build-image.outputs.digest }}
+          push-to-registry: true
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@v0.36.0
         with:
@@ -249,7 +258,7 @@ jobs:
 
               ${IMAGE}@${IMAGE_DIGEST}
 
-          Verify downloaded archives with SHA256SUMS. The release image includes signed Syft SPDX SBOM and Grype vulnerability attestations, plus BuildKit SLSA Provenance v1 in GHCR.
+          Verify downloaded archives with SHA256SUMS. The release image includes signed Syft SPDX SBOM and Grype vulnerability attestations, plus signed GitHub Actions SLSA Provenance v1 and BuildKit provenance in GHCR.
           EOF
 
       - name: Release

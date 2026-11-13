@@ -19,6 +19,19 @@ class ImageMetadataTests(unittest.TestCase):
         self.assertLess(release.index('git checkout --detach "refs/tags/${VERSION}"'),
                         release.index('COMMIT="$(git rev-parse HEAD)"'))
 
+    def test_signed_provenance_is_published_for_image_digest(self):
+        for filename, build in [("container-image.yml", "build"), ("release.yml", "build-image")]:
+            with self.subTest(workflow=filename):
+                workflow = (ROOT / ".github/workflows" / filename).read_text()
+                self.assertIn("attestations: write", workflow)
+                self.assertIn("artifact-metadata: write", workflow)
+                step = workflow.split("- name: Attest signed image provenance\n")[1].split("\n      - name:")[0]
+                self.assertIn("uses: actions/attest@v4", step)
+                self.assertIn("subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}", step)
+                self.assertIn("subject-digest: ${{ steps." + build + ".outputs.digest }}", step)
+                self.assertIn("push-to-registry: true", step)
+                self.assertNotIn("predicate-type:", step)
+
     def test_published_images_have_all_metadata(self):
         for filename, build in [("container-image.yml", "build"), ("release.yml", "build-image")]:
             with self.subTest(workflow=filename):
